@@ -6,6 +6,10 @@ import requests
 import folium
 from streamlit_folium import st_folium
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rcParams['font.family'] = 'NanumGothic'
+matplotlib.rcParams['axes.unicode_minus'] = False
+
 
 # -----------------------------
 # SGIS AccessToken 발급 함수
