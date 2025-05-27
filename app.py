@@ -14,16 +14,16 @@ import matplotlib.pyplot as plt
 def get_access_token(consumer_key, consumer_secret):
     url = "https://sgisapi.kostat.go.kr/OpenAPI3/auth/authentication.json"
     params = {
-        "consumer_key": consumer_key,
-        "consumer_secret": consumer_secret
+        "consumer_key": consumer_key.strip(),
+        "consumer_secret": consumer_secret.strip()
     }
     try:
         response = requests.get(url, params=params)
         result = response.json()
-        if result.get("errCd") == "0":
+        if int(result.get("errCd", -1)) == 0:
             return result["result"]["accessToken"]
         else:
-            st.error(f"AccessToken 발급 오류: {result.get('errMsg')}")
+            st.error(f"AccessToken 발급 오류: {result.get('errMsg')} (코드: {result.get('errCd')})")
     except Exception as e:
         st.error(f"AccessToken 요청 실패: {e}")
     return None
@@ -43,7 +43,7 @@ def geocode_with_access_token(address, access_token):
         response = requests.get(url, params=params)
         st.code(f"📡 요청 URL: {response.url}")
         result = response.json()
-        if result.get("errCd") == "0":
+        if int(result.get("errCd", -1)) == 0:
             coords = result["result"]["resultdata"][0]
             return float(coords["y"]), float(coords["x"])
         else:
@@ -66,7 +66,7 @@ def load_population_data():
     return df, df_ratio, age_columns
 
 # -----------------------------
-# 가장 유사한 동 찾기
+# 유사한 동 찾기
 # -----------------------------
 def find_most_similar(df_ratio, age_columns, selected_name):
     target = df_ratio[df_ratio["행정구역"] == selected_name][age_columns].values[0]
