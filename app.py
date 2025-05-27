@@ -17,10 +17,16 @@ def geocode_with_sgis_key(address, api_key):
         "address": address,
         "consumer_key": api_key
     }
+
+    st.code(f"🔍 요청 주소: {address}")
+    st.code(f"🔐 사용된 인증키 앞부분: {api_key[:5]}****")
+
     try:
         response = requests.get(url, params=params)
+        st.code(f"📡 요청 URL: {response.url}")
         if response.status_code == 200:
             result = response.json()
+            st.json(result)
             if result.get("errCd") == "0":
                 lon = float(result["result"]["x"])
                 lat = float(result["result"]["y"])
@@ -34,7 +40,7 @@ def geocode_with_sgis_key(address, api_key):
     return None, None
 
 # -----------------------------
-# 데이터 로딩
+# 인구 데이터 로딩
 # -----------------------------
 @st.cache_data
 def load_population_data():
@@ -47,7 +53,7 @@ def load_population_data():
     return df, df_ratio, age_columns
 
 # -----------------------------
-# 유사 동 찾기
+# 유사한 동 찾기
 # -----------------------------
 def find_most_similar(df_ratio, age_columns, selected_name):
     target = df_ratio[df_ratio["행정구역"] == selected_name][age_columns].values[0]
@@ -71,7 +77,7 @@ def draw_map(center1, center2, name1, name2):
     st_folium(m, width=700, height=500)
 
 # -----------------------------
-# 그래프 표시
+# 인구 그래프
 # -----------------------------
 def plot_comparison(name1, data1, name2, data2, age_columns):
     x = range(len(age_columns))
@@ -87,8 +93,7 @@ def plot_comparison(name1, data1, name2, data2, age_columns):
 # Streamlit App 시작
 # -----------------------------
 st.set_page_config(layout="wide")
-st.title("📍 SGIS API 기반 인구 구조 유사 동 찾기")
-st.markdown("SGIS API를 활용하여 입력한 주소의 위치와 인구 구조가 가장 비슷한 동을 지도와 그래프로 보여줍니다.")
+st.title("📍 SGIS API (인증키) 기반 인구 구조 유사 동 찾기 + 지도 표시 (디버깅 포함)")
 
 # API 키 관리
 api_key = st.secrets["SGIS_API_KEY"] if "SGIS_API_KEY" in st.secrets else os.getenv("SGIS_API_KEY")
