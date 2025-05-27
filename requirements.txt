@@ -1,8 +1,8 @@
 
 streamlit
-streamlit-folium
-folium
 pandas
 numpy
+folium
+streamlit-folium
 matplotlib
-geopy
+requests
