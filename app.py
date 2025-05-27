@@ -22,8 +22,6 @@ def load_data():
 
 # 유사한 동 찾기 (인구비율 기반 거리)
 def find_most_similar(df_ratio, age_columns, selected_name):
-    if selected_name not in df_ratio["행정구역"].values:
-        return None, None
     target = df_ratio[df_ratio["행정구역"] == selected_name][age_columns].values[0]
     df_ratio["거리"] = df_ratio[age_columns].apply(lambda row: np.abs(row.values - target).sum(), axis=1)
     df_ratio_filtered = df_ratio[df_ratio["행정구역"] != selected_name]
@@ -71,18 +69,26 @@ st.title("🧑‍🤝‍🧑 인구 구조가 비슷한 동 찾기")
 st.markdown("입력한 동과 연령별 인구 비율이 가장 비슷한 동을 찾아 지도와 함께 보여줍니다.")
 
 df_raw, df_ratio, age_columns = load_data()
-user_input = st.text_input("동 이름을 정확히 입력하세요 (예: 서울특별시 종로구 사직동(1111053000))")
+user_input = st.text_input("동 이름을 입력하세요 (예: 송도4동)")
+
+# 사용자 입력 처리 및 매칭
+matched_rows = df_raw[df_raw["행정구역"].str.contains(user_input, case=False, na=False)] if user_input else pd.DataFrame()
 
 if user_input:
-    if user_input not in df_raw["행정구역"].values:
-        st.error("입력하신 동을 찾을 수 없습니다. 정확히 입력해 주세요.")
+    if matched_rows.empty:
+        st.error("입력하신 동을 찾을 수 없습니다. 다시 입력해 주세요.")
+    elif len(matched_rows) > 1:
+        selected_full_name = st.selectbox("여러 개의 후보가 있습니다. 하나를 선택하세요:", matched_rows["행정구역"].values)
     else:
-        similar_name, similar_ratio = find_most_similar(df_ratio, age_columns, user_input)
-        user_ratio = df_ratio[df_ratio["행정구역"] == user_input][age_columns].values[0]
-        st.success(f"'{user_input}'와 인구 구조가 가장 비슷한 동은 ➡️ **'{similar_name}'** 입니다.")
+        selected_full_name = matched_rows.iloc[0]["행정구역"]
 
-        plot_comparison(user_input, user_ratio, similar_name, similar_ratio, age_columns)
+    if not matched_rows.empty:
+        similar_name, similar_ratio = find_most_similar(df_ratio, age_columns, selected_full_name)
+        user_ratio = df_ratio[df_ratio["행정구역"] == selected_full_name][age_columns].values[0]
+        st.success(f"'{selected_full_name}'와 인구 구조가 가장 비슷한 동은 ➡️ **'{similar_name}'** 입니다.")
 
-        loc1 = geocode(user_input.split(" (")[0])
+        plot_comparison(selected_full_name, user_ratio, similar_name, similar_ratio, age_columns)
+
+        loc1 = geocode(selected_full_name.split(" (")[0])
         loc2 = geocode(similar_name.split(" (")[0])
-        draw_map(loc1, loc2, user_input, similar_name)
+        draw_map(loc1, loc2, selected_full_name, similar_name)
